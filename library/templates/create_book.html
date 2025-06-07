@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main class="cointainer">
+        <div class="row">
+            <div class="col-md-4 offset-md-4 mt-5">
+                <form action="/books/create/" method="post" class="card card-body">
+                    <h1 class="text-center">Create book</h1>
+                    {% csrf_token %}
+                    {{form}}
+                    <button class="btn btn-primary mt-5">
+                        save
+                    </button>
+                </form>
+            </div>
+        </div>
+    </main>
+{% endblock %}

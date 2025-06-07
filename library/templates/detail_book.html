@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block content %}
+    <main class="container mt-5">
+        <div class="row justify-content-center">
+            {% if user.profile.role == 'admin' %}
+                <div class="col-md-4 mt-5">
+                    <form action="{% url 'detail_book' book.id %}" method="post" class="card card-body">
+                        <h1 class="text-center">Edit book</h1>
+                        {% csrf_token %}
+                        {{form}}
+                        <button class="btn btn-primary mt-5">
+                            update
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="col-md-8">
+                    <div class="card shadow-sm">
+                        <div class="card-body">
+                            <h3 class="card-title">{{ book.title }}</h3>
+                            <h5 class="text-muted mb-3">by {{ book.author }} ({{ book.publication_year }})</h5>
+                            
+                            {% if book.abstract %}
+                                <p class="card-text">{{ book.abstract }}</p>
+                            {% else %}
+                                <p class="text-muted fst-italic">No abstract available.</p>
+                            {% endif %}
+                            
+                            <hr>
+                            <p><strong>Available copies:</strong> {{ book.stock }}</p>
+                            
+                            <a href="{% url 'home' %}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Back to list
+                            </a>
+                            {% if user.profile.role == 'regular' %}
+                                {% if book.stock > 0 %}
+                                    <form action="">
+                                        <a href="{% url 'borrow_book' book.id %}" class="btn btn-primary">
+                                            <i class="bi bi-book"></i> Borrow this book
+                                        </a>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </main>
+{% endblock %}
