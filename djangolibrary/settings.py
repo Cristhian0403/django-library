@@ -78,8 +78,12 @@ WSGI_APPLICATION = 'djangolibrary.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'dceo40ffubgauv',
+        'USER': 'ube201nbbk46kn',
+        'PASSWORD': 'pbe56b54239552fb4262886bb2297bac70f1489ec4dad61e1874d46dd9078b9a2',
+        'HOST': 'postgres://ube201nbbk46kn:pbe56b54239552fb4262886bb2297bac70f1489ec4dad61e1874d46dd9078b9a2@c3v5n5ajfopshl.cluster-czrs8kj4isg7.us-east-1.rds.amazonaws.com:5432/dceo40ffubgauv',
+        'PORT': '5432',
     }
 }
 
