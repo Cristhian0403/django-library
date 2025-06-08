@@ -1,35 +1,39 @@
-from django.shortcuts import render, redirect, get_object_or_404
+# Import Django's built-in modules for user management, messaging, request handling, etc.
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User
 from django.contrib.auth import login, logout, authenticate
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.shortcuts import render, redirect
 from django.utils import timezone
-from django.contrib import messages
+from django.views.decorators.http import require_POST
 from django.db import IntegrityError
-from .forms import BookForm
-from .models import Book, BookLoan
-import requests
-from .config import API_BASE_URL
 
-# Create your views here.
+# Import custom forms, models, and configuration
+from .forms import BookForm
+from .models import Book
+from .config import API_BASE_URL
+import requests  # Used to make HTTP requests to external/internal APIs
+
+# View for displaying the homepage with a list of books from an external API
 @login_required
 def home(request):
     url = f'{API_BASE_URL}/api/books/'
     cookies = {
-        'sessionid': request.COOKIES.get('sessionid')
+        'sessionid': request.COOKIES.get('sessionid')  # Pass session cookie for authentication
     }
-    response = requests.get(url,cookies=cookies)
+    response = requests.get(url, cookies=cookies)
     data = []
     if response.status_code == 200:
         data = response.json()
     else:
         data = []
 
-    return render(request, 'home.html',{
-        'books': data
+    return render(request, 'home.html', {
+        'books': data  # Render the list of books in the template
     })
-    
+
+# View to list current book loans from the API
 @login_required
 def books(request):
     cookies = {
@@ -37,12 +41,13 @@ def books(request):
     }
     url = f'{API_BASE_URL}/api/loans/'
     response = requests.get(url, cookies=cookies)
-    
+
     loans = response.json() if response.status_code == 200 else []
     return render(request, 'books.html', {
         'loans': loans
     })
-    
+
+# View to borrow a book by sending a POST request to the API
 @login_required
 def borrow_book(request, book_id):
     url = f'{API_BASE_URL}/api/loans/create-loan/'
@@ -68,7 +73,7 @@ def borrow_book(request, book_id):
         messages.success(request, "Loan created successfully.")
         return redirect('books')
 
-    
+    # Handle possible errors
     try:
         loans = response.json()
     except ValueError:
@@ -80,6 +85,7 @@ def borrow_book(request, book_id):
 
     return redirect('books')
 
+# View to return a borrowed book by sending a POST request to the API
 @login_required
 def return_book(request, book_id):
     url = f'{API_BASE_URL}/api/loans/return-loan/'
@@ -105,7 +111,6 @@ def return_book(request, book_id):
         messages.success(request, "Book returned successfully.")
         return redirect('books')
 
-    
     try:
         loans = response.json()
     except ValueError:
@@ -117,6 +122,7 @@ def return_book(request, book_id):
 
     return redirect('books')
 
+# View to create a new book by submitting a form to the API
 @login_required
 def create_book(request):
     if request.method == 'GET':
@@ -144,7 +150,6 @@ def create_book(request):
             messages.success(request, "Book created successfully.")
             return redirect('home')
 
-        
         try:
             response = response.json()
         except ValueError:
@@ -156,11 +161,11 @@ def create_book(request):
         return render(request, 'create_book.html', {
             'form': BookForm,
         })
- 
-@login_required   
+
+# View to delete a book by making a DELETE request to the API
+@login_required
 def delete_book(request, book_id):
     url = f'{API_BASE_URL}/api/books/{book_id}/'
-    
     csrf_token = request.COOKIES.get('csrftoken')
 
     headers = {
@@ -187,23 +192,26 @@ def delete_book(request, book_id):
     except requests.RequestException as e:
         messages.error(request, f"Request failed: {str(e)}")
 
-    return redirect('home')   
-    
-    
+    return redirect('home')
+
+# View to view and update details of a specific book
 @login_required
 def detail_book(request, book_id):
     url = f'{API_BASE_URL}/api/books/{book_id}'
     cookies = {
         'sessionid': request.COOKIES.get('sessionid')
     }
-    response = requests.get(url,cookies=cookies)
+    response = requests.get(url, cookies=cookies)
+
     if response.status_code == 200:
         data = response.json()
-        book=Book(**data)
+        book = Book(**data)
         form = BookForm(instance=book)
+
         if request.method == 'GET':
             return render(request, 'detail_book.html', {'book': book, 'form': form})
 
+        # PATCH request to update the book
         url = f'{API_BASE_URL}/api/books/{book_id}/'
         csrf_token = request.COOKIES.get('csrftoken')
 
@@ -218,8 +226,7 @@ def detail_book(request, book_id):
             'csrftoken': csrf_token,
         }
 
-        payload = request.POST.dict() 
-
+        payload = request.POST.dict()
         response = requests.patch(url, json=payload, headers=headers, cookies=cookies)
 
         if response.status_code == 200:
@@ -230,10 +237,11 @@ def detail_book(request, book_id):
             messages.error(request, "Error updating book:" + response.content)
 
         return render(request, 'detail_book.html', {'book': book, 'form': form})
-    
+
+# View to handle user signup using Django's built-in form
 def signup(request):
     if request.method == 'GET':
-        return render(request, 'signup.html',{
+        return render(request, 'signup.html', {
             'form': UserCreationForm
         })
     else:
@@ -241,49 +249,45 @@ def signup(request):
             try:
                 user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
                 user.save()
-                login(request, user)
+                login(request, user)  # Log the user in after successful registration
                 return redirect('home')
             except IntegrityError:
                 messages.warning(request, "User already exist.")
-                return render(request, 'signup.html',{
-                    'form': UserCreationForm,
-                })
             except ValueError:
                 messages.warning(request, "Invalid data provided. Please check your inputs.")
-                return render(request, 'signup.html',{
-                    'form': UserCreationForm,
-                })
         else:
             messages.warning(request, "Password do not match")
-            return render(request, 'signup.html',{
-                'form': UserCreationForm,
-            })
-            
+
+        return render(request, 'signup.html', {
+            'form': UserCreationForm
+        })
+
+# View to handle user logout
 @login_required
 def signout(request):
     logout(request)
     return redirect(home)
 
+# View to handle user login
 def signin(request):
     if request.method == 'GET':
-        return render(request, 'signin.html',{
-            'form':AuthenticationForm
+        return render(request, 'signin.html', {
+            'form': AuthenticationForm
         })
     else:
         user = authenticate(request, username=request.POST['username'], password=request.POST['password'])
         if user is None:
-            return render(request, 'signin.html',{
-                'form':AuthenticationForm,
-                'error':'User or Password is incorrect'
+            return render(request, 'signin.html', {
+                'form': AuthenticationForm,
+                'error': 'User or Password is incorrect'
             })
         else:
             login(request, user)
             return redirect('home')
 
+# Custom 404 handler to redirect authenticated or unauthenticated users accordingly
 def custom_page_not_found_view(request, exception):
     if request.user.is_authenticated:
         return redirect('home')
     else:
         return redirect('signin')
-
-    
