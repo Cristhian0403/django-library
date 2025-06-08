@@ -11,7 +11,7 @@ from django.db import IntegrityError
 
 # Import custom forms, models, and configuration
 from .forms import BookForm
-from .models import Book
+from .models import Book, Profile
 from .config import API_BASE_URL
 import requests  # Used to make HTTP requests to external/internal APIs
 
@@ -249,6 +249,7 @@ def signup(request):
             try:
                 user = User.objects.create_user(username=request.POST['username'], password=request.POST['password1'])
                 user.save()
+                Profile.objects.create(user=user)
                 login(request, user)  # Log the user in after successful registration
                 return redirect('home')
             except IntegrityError:
