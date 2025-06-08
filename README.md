@@ -22,22 +22,27 @@ This is a web-based **Library Management System** built with **Django** and **Dj
 ## ⚙️ Setup Instructions
 
 ### 1. Clone the Repository
+    ```
     git clone https://github.com/Cristhian0403/django-library.git
-
+    ```
 ### 2. Create and Activate a Virtual Environment
-python -m venv venv
-source venv/bin/activate  # On Windows use: venv\Scripts\activate
-
+    ```
+    python -m venv venv
+    source venv/bin/activate  # On Windows use: venv\Scripts\activate
+    ```
 ### 3. Install Dependencies
-pip install -r requirements.txt
-
+    ```
+    pip install -r requirements.txt
+    ```
 ### 4. Apply Migrations and Create Superuser
-python manage.py migrate
-python manage.py createsuperuser
-
+    ```
+    python manage.py migrate
+    python manage.py createsuperuser
+    ```
 ### 5. Run the Development Server
-python manage.py runserver
-
+    ```
+    python manage.py runserver
+    ```
 Visit http://127.0.0.1:8000 in your browser.
 
 
