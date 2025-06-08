@@ -10,11 +10,12 @@ from django.db import IntegrityError
 from .forms import BookForm
 from .models import Book, BookLoan
 import requests
+from .config import API_BASE_URL
 
 # Create your views here.
 @login_required
 def home(request):
-    url = 'http://localhost:8000/api/books/'
+    url = f'{API_BASE_URL}/api/books/'
     cookies = {
         'sessionid': request.COOKIES.get('sessionid')
     }
@@ -28,27 +29,28 @@ def home(request):
     return render(request, 'home.html',{
         'books': data
     })
-
+    
 @login_required
 def books(request):
     cookies = {
         'sessionid': request.COOKIES.get('sessionid')
     }
-    url = 'http://localhost:8000/api/loans/'
+    url = f'{API_BASE_URL}/api/loans/'
     response = requests.get(url, cookies=cookies)
-
+    
     loans = response.json() if response.status_code == 200 else []
     return render(request, 'books.html', {
         'loans': loans
     })
-
+    
 @login_required
 def borrow_book(request, book_id):
-    url = 'http://localhost:8000/api/loans/create-loan/'
+    url = f'{API_BASE_URL}/api/loans/create-loan/'
     csrf_token = request.COOKIES.get('csrftoken')
     headers = {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrf_token,
+        'Referer': API_BASE_URL
     }
 
     cookies = {
@@ -80,11 +82,12 @@ def borrow_book(request, book_id):
 
 @login_required
 def return_book(request, book_id):
-    url = 'http://localhost:8000/api/loans/return-loan/'
+    url = f'{API_BASE_URL}/api/loans/return-loan/'
     csrf_token = request.COOKIES.get('csrftoken')
     headers = {
         'Content-Type': 'application/json',
         'X-CSRFToken': csrf_token,
+        'Referer': API_BASE_URL
     }
 
     cookies = {
@@ -114,17 +117,19 @@ def return_book(request, book_id):
 
     return redirect('books')
 
+@login_required
 def create_book(request):
     if request.method == 'GET':
         return render(request, 'create_book.html', {
             'form': BookForm
         })
     else:
-        url = 'http://localhost:8000/api/books/'
+        url = f'{API_BASE_URL}/api/books/'
         csrf_token = request.COOKIES.get('csrftoken')
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrf_token,
+            'Referer': API_BASE_URL
         }
 
         cookies = {
@@ -151,15 +156,17 @@ def create_book(request):
         return render(request, 'create_book.html', {
             'form': BookForm,
         })
-    
+ 
+@login_required   
 def delete_book(request, book_id):
-    url = f'http://localhost:8000/api/books/{book_id}/'
+    url = f'{API_BASE_URL}/api/books/{book_id}/'
     
     csrf_token = request.COOKIES.get('csrftoken')
 
     headers = {
         'X-CSRFToken': csrf_token,
         'Content-Type': 'application/json',
+        'Referer': API_BASE_URL
     }
 
     cookies = {
@@ -167,21 +174,25 @@ def delete_book(request, book_id):
         'csrftoken': csrf_token
     }
 
-    response = requests.delete(url, headers=headers, cookies=cookies)
+    try:
+        response = requests.delete(url, headers=headers, cookies=cookies)
 
-    if response.status_code == 204:
-        messages.success(request, "Book deleted successfully.")
-    elif response.status_code == 404:
-        messages.error(request, "Book not found.")
-    else:
-        messages.error(request, "An error occurred while trying to delete the book.")
+        if response.status_code == 204:
+            messages.success(request, "Book deleted successfully.")
+        elif response.status_code == 404:
+            messages.error(request, "Book not found.")
+        else:
+            messages.error(request, f"Unexpected response: {response.status_code} - {response.text}")
 
-    return redirect('home')      
+    except requests.RequestException as e:
+        messages.error(request, f"Request failed: {str(e)}")
+
+    return redirect('home')   
     
     
-    
+@login_required
 def detail_book(request, book_id):
-    url = f'http://localhost:8000/api/books/{book_id}'
+    url = f'{API_BASE_URL}/api/books/{book_id}'
     cookies = {
         'sessionid': request.COOKIES.get('sessionid')
     }
@@ -193,12 +204,13 @@ def detail_book(request, book_id):
         if request.method == 'GET':
             return render(request, 'detail_book.html', {'book': book, 'form': form})
 
-        url = f'http://localhost:8000/api/books/{book_id}/'
+        url = f'{API_BASE_URL}/api/books/{book_id}/'
         csrf_token = request.COOKIES.get('csrftoken')
 
         headers = {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrf_token,
+            'Referer': API_BASE_URL
         }
 
         cookies = {
@@ -211,6 +223,8 @@ def detail_book(request, book_id):
         response = requests.patch(url, json=payload, headers=headers, cookies=cookies)
 
         if response.status_code == 200:
+            updated_data = response.json()
+            form = BookForm(initial=updated_data)
             messages.success(request, "Book updated successfully.")
         else:
             messages.error(request, "Error updating book:" + response.content)
