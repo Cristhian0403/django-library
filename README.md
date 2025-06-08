@@ -42,8 +42,10 @@ Visit http://127.0.0.1:8000 in your browser.
 
 
 ## 📂 Project Structure
+```
 django_library/
 ├── api/                    # REST API logic (ViewSets, serializers)
 ├── djangolibrary/          # Main project folder (settings, urls, wsgi)               
 ├── library/                # App containing models, views, forms
 ├── manage.py
+```
